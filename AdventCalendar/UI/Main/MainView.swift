@@ -8,12 +8,6 @@
 import SwiftUI
 
 struct MainView: View {
-
-    let router: HomeRouter
-
-    @AppStorage("selected_topic") private var storedTopicRawValue: String = ""
-    @AppStorage("topic_start_date") private var topicStartDateRaw: Double = 0
-
     /// Call this when the user taps the main CTA button.
     let onChooseTheme: () -> Void
 
@@ -64,20 +58,11 @@ struct MainView: View {
         .navigationTitle("Main")
         .navigationBarTitleDisplayMode(.large)
         .background(Color(.systemBackground))
-        .onAppear {
-            let hasTopic = !storedTopicRawValue.isEmpty
-            let hasStartDate = topicStartDateRaw > 0
-
-            guard hasTopic && hasStartDate else { return }
-            guard let topic = Topic(rawValue: storedTopicRawValue) else { return }
-
-            router.push(.calendar(topic: topic))
-        }
     }
 }
 
 #Preview {
     NavigationStack {
-        MainView(router: HomeRouter(), onChooseTheme: {})
+        MainView(onChooseTheme: {})
     }
 }

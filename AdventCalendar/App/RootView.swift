@@ -18,12 +18,16 @@ struct RootView: View {
     @AppStorage("topic_start_date") private var topicStartDateRaw: Double = 0
 
     @Environment(\.scenePhase) private var scenePhase
-
+     
     // MARK: - DEBUG Mocks
     @State private var didRunMockBootstrap: Bool = false
+    @AppStorage("debug_use_mocks") private var debugUseMocks: Bool = false
 
     private func runMockBootstrapIfNeeded() {
         #if DEBUG
+        // Always run bootstrap in DEBUG so it can also clear previously seeded mock data
+        // when mocks are turned off. Seeding itself is still controlled inside AppMocks
+        // (AppMocking.enabled / clearDataWhenDisabled). 
         guard !didRunMockBootstrap else { return }
         didRunMockBootstrap = true
         AppMockBootstrap.run()
@@ -56,23 +60,21 @@ struct RootView: View {
         }
     }
 
-    private func presentCalendarIfNeeded() {
-        guard let topic = currentTopic, currentDay != nil else { return }
-
-        // If nothing is on the stack yet, show the calendar.
-        if homeRouter.path.isEmpty {
-            homeRouter.push(.calendar(topic: topic))
-        }
-    }
-
     var body: some View {
         TabView {
 
             // ===== MAIN =====
             NavigationStack(path: $homeRouter.path) {
-                MainView(router: homeRouter, onChooseTheme: {
-                    homeRouter.push(.choosingTopic)
-                })
+                Group {
+                    if let topic = currentTopic {
+                        CalendarView(topic: topic, router: homeRouter)
+                            .navigationBarTitleDisplayMode(.inline)
+                    } else {
+                        MainView(onChooseTheme: {
+                            homeRouter.push(.choosingTopic)
+                        })
+                    }
+                }
                 .navigationDestination(for: HomeRoute.self) { route in
                     switch route {
                     case .choosingTopic:
@@ -98,13 +100,11 @@ struct RootView: View {
             }
             .onAppear {
                 runMockBootstrapIfNeeded()
-                presentCalendarIfNeeded()
                 presentSurveyIfNeeded()
             }
             .onChange(of: scenePhase) { phase in
                 if phase == .active {
                     runMockBootstrapIfNeeded()
-                    presentCalendarIfNeeded()
                     presentSurveyIfNeeded()
                 }
             }

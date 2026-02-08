@@ -127,6 +127,7 @@ enum AppMockScenario: Hashable {
 enum AppMockBootstrap {
 
     private static let didClearKey = "__app_mocks_did_clear__"
+    private static let didSeedKey = "__app_mocks_did_seed__"
 
     private static var isRunningForPreviews: Bool {
         ProcessInfo.processInfo.environment["XCODE_RUNNING_FOR_PREVIEWS"] == "1"
@@ -135,13 +136,20 @@ enum AppMockBootstrap {
     /// Call this once on app start (and optionally when coming back to foreground).
     static func run() {
         if AppMocking.enabled {
-            applyScenario(AppMocking.scenario, forceOverride: AppMocking.forceOverride || isRunningForPreviews)
+            let didApply = applyScenario(AppMocking.scenario, forceOverride: AppMocking.forceOverride || isRunningForPreviews)
+            if didApply {
+                UserDefaults.standard.set(true, forKey: didSeedKey)
+            }
             // One-shot override is handy; reset automatically.
             AppMocking.forceOverride = false
             // If mocks are on again, allow clearing next time they are turned off.
             UserDefaults.standard.set(false, forKey: didClearKey)
         } else if AppMocking.clearDataWhenDisabled {
+            // Clear only if mocks previously seeded persisted data.
+            guard UserDefaults.standard.bool(forKey: didSeedKey) else { return }
             clearAllMockDataOnce()
+            // Once cleared, consider mock seeding removed.
+            UserDefaults.standard.set(false, forKey: didSeedKey)
         }
     }
 
@@ -151,6 +159,7 @@ enum AppMockBootstrap {
 
         // Clear active calendar selection/start date.
         MockAppStorageSeed.clearActiveCalendar()
+        UserDefaults.standard.set(false, forKey: "debug_use_mocks")
 
         // Clear per-topic progress/survey (safe even if keys don't exist).
         let progress = TaskProgressStore()
@@ -158,16 +167,22 @@ enum AppMockBootstrap {
             progress.clearCompletion(topic: t)
             SurveyStore.clearSurvey(topic: t)
         }
+
+        // Extra safety: wipe any persisted completion keys that may have been seeded by mocks.
+        let allKeys = UserDefaults.standard.dictionaryRepresentation().keys
+        for key in allKeys where key.hasPrefix("completed_days_") {
+            UserDefaults.standard.removeObject(forKey: key)
+        }
     }
 
-    private static func applyScenario(_ scenario: AppMockScenario, forceOverride: Bool) {
+    private static func applyScenario(_ scenario: AppMockScenario, forceOverride: Bool) -> Bool {
         // If calendar already exists, do not override unless forced.
         if !forceOverride {
             let hasTopic = !(UserDefaults.standard.string(forKey: "selected_topic") ?? "")
                 .trimmingCharacters(in: .whitespacesAndNewlines)
                 .isEmpty
             let hasStart = UserDefaults.standard.double(forKey: "topic_start_date") > 0
-            if hasTopic && hasStart { return }
+            if hasTopic && hasStart { return false }
         }
 
         switch scenario {
@@ -180,6 +195,7 @@ enum AppMockBootstrap {
 
             SurveyStore.clearSurvey(topic: topic)
             SurveyStore.seedSurvey(topic: topic, days: surveyDays)
+            return true
 
         case .perfectFinished(let topic, let daysPassed):
             MockAppStorageSeed.setActiveCalendar(topic: topic, startDate: AppMocks.startDate(daysAgo: daysPassed))
@@ -190,6 +206,7 @@ enum AppMockBootstrap {
 
             SurveyStore.clearSurvey(topic: topic)
             SurveyStore.seedPerfectSurvey(topic: topic)
+            return true
         }
     }
 }
@@ -334,4 +351,3 @@ enum MockAppStorageSeed {
     MockAppStorageSeed.clearActiveCalendar()
     return RootView()
 }
-

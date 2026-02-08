@@ -63,7 +63,7 @@ struct ChoosingTopicView: View {
                 storedTopicRawValue = selected.rawValue
                 topicStartDateRaw = now
 
-                router.push(.calendar(topic: selected))
+                router.popToRoot()
             } label: {
                 Text("Select")
                     .font(.headline)

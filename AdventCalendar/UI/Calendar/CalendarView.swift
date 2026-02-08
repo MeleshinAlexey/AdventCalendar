@@ -165,7 +165,6 @@ struct CalendarView: View {
                 UIScrollView.appearance().bounces = true
             }
             .background(Color.white.ignoresSafeArea(edges: [.top, .horizontal]))
-            .toolbar(.hidden, for: .navigationBar)
         }
     }
 }
