@@ -13,6 +13,9 @@ struct AdventCalendarApp: App {
     var body: some Scene {
         WindowGroup {
             RootView()
+                // Lock appearance for the whole app starting at the entry point.
+                .preferredColorScheme(.light)
+                .environment(\.colorScheme, .light)
         }
     }
 }

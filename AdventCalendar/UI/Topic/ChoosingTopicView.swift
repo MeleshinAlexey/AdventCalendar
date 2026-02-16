@@ -83,6 +83,9 @@ struct ChoosingTopicView: View {
         }
         .navigationTitle("Choosing a topic")
         .navigationBarTitleDisplayMode(.large)
+        .background(Color.white.ignoresSafeArea())
+        .preferredColorScheme(.light)
+        .environment(\.colorScheme, .light)
         .onAppear {
             // Ensure consistency: topic and start date must exist together
             let hasTopic = !storedTopicRawValue.isEmpty
@@ -151,4 +154,6 @@ private struct TopicCard: View {
     NavigationStack {
         ChoosingTopicView(router: HomeRouter())
     }
+    .preferredColorScheme(.light)
+    .environment(\.colorScheme, .light)
 }

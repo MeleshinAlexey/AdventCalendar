@@ -83,8 +83,20 @@ struct StatisticsView: View {
         var betweenCardsAndButton: CGFloat { (max(22, min(34, width * 0.075))) * v }
         var bottomPadding: CGFloat { (max(16, min(26, width * 0.06))) * v }
 
-        var cardHeight: CGFloat { max(110, min(138, width * 0.33)) }
-        var cardCornerRadius: CGFloat { max(18, min(24, width * 0.06)) }
+        // MARK: - Adaptive card sizing (shared with Archive)
+        var cardWidth: CGFloat {
+            let available = width - (sidePadding * 2)
+            return min(380, max(320, available))
+        }
+
+        var cardHeight: CGFloat {
+            max(124, min(156, cardWidth * 0.40))
+        }
+
+        var cardCornerRadius: CGFloat {
+            max(20, min(24, cardWidth * 0.06))
+        }
+
         var cardInnerPadding: CGFloat { max(18, min(22, width * 0.055)) }
 
         var cardTitleFont: CGFloat { max(18, min(21, width * 0.052)) }
@@ -172,6 +184,7 @@ struct StatisticsView: View {
                                     startPoint: .topLeading,
                                     endPoint: .bottomTrailing
                                 ),
+                                width: m.cardWidth,
                                 height: m.cardHeight,
                                 cornerRadius: m.cardCornerRadius,
                                 innerPadding: m.cardInnerPadding,
@@ -189,6 +202,7 @@ struct StatisticsView: View {
                                     startPoint: .topLeading,
                                     endPoint: .bottomTrailing
                                 ),
+                                width: m.cardWidth,
                                 height: m.cardHeight,
                                 cornerRadius: m.cardCornerRadius,
                                 innerPadding: m.cardInnerPadding,
@@ -206,6 +220,7 @@ struct StatisticsView: View {
                                     startPoint: .topLeading,
                                     endPoint: .bottomTrailing
                                 ),
+                                width: m.cardWidth,
                                 height: m.cardHeight,
                                 cornerRadius: m.cardCornerRadius,
                                 innerPadding: m.cardInnerPadding,
@@ -255,9 +270,11 @@ struct StatisticsView: View {
                 Color.clear
                     .frame(height: geo.safeAreaInsets.top)
             }
-            .background(Color.white)
+            .background(Color.white.ignoresSafeArea())
             .scrollBounceBehavior(.basedOnSize)
         }
+        .preferredColorScheme(.light)
+        .environment(\.colorScheme, .light)
     }
 }
 
@@ -269,6 +286,7 @@ private struct StatisticsCardView: View {
     let iconAsset: String
     let gradient: LinearGradient
 
+    let width: CGFloat
     let height: CGFloat
     let cornerRadius: CGFloat
     let innerPadding: CGFloat
@@ -306,8 +324,9 @@ private struct StatisticsCardView: View {
             }
             .padding(innerPadding)
         }
-        .frame(maxWidth: .infinity)
+        .frame(width: width)
         .frame(height: height)
+        .frame(maxWidth: .infinity)
     }
 }
 
@@ -339,4 +358,6 @@ private extension Color {
     NavigationStack {
         StatisticsView(router: HomeRouter())
     }
+    .preferredColorScheme(.light)
+    .environment(\.colorScheme, .light)
 }

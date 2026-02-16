@@ -12,25 +12,32 @@ struct LoadingView: View {
     @State private var progress: CGFloat = 0
 
     var body: some View {
-        VStack(spacing: 24) {
+        ZStack {
+            Color.white.ignoresSafeArea()
 
-            Text("Loading…")
-                .font(.headline)
+            VStack(spacing: 24) {
 
-            ZStack(alignment: .leading) {
-                Capsule()
-                    .fill(Color.gray.opacity(0.2))
-                    .frame(height: 12)
+                Text("Loading…")
+                    .font(.headline)
+                    .foregroundStyle(.black)
 
-                Capsule()
-                    .fill(Color.yellow)
-                    .frame(
-                        width: max(0, progress),
-                        height: 12
-                    )
+                ZStack(alignment: .leading) {
+                    Capsule()
+                        .fill(Color.gray.opacity(0.2))
+                        .frame(height: 12)
+
+                    Capsule()
+                        .fill(Color.yellow)
+                        .frame(
+                            width: max(0, progress),
+                            height: 12
+                        )
+                }
+                .frame(width: 220)
             }
-            .frame(width: 220)
         }
+        .preferredColorScheme(.light)
+        .environment(\.colorScheme, .light)
         .onAppear {
             withAnimation(.linear(duration: 1.6)) {
                 progress = 220
@@ -41,4 +48,6 @@ struct LoadingView: View {
 
 #Preview {
     LoadingView()
+        .preferredColorScheme(.light)
+        .environment(\.colorScheme, .light)
 }

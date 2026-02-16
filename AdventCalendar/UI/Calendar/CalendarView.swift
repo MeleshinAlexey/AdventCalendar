@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import UIKit
 
 struct CalendarView: View {
 
@@ -151,6 +152,7 @@ struct CalendarView: View {
                 }
             }
             .ignoresSafeArea(edges: [.top, .horizontal])
+            .modifier(CalendarBounceFix())
             // Prevent pulling the ScrollView down beyond the header (no top gap / no bounce)
             .onAppear {
                 reloadCompletedDays()
@@ -166,6 +168,14 @@ struct CalendarView: View {
             }
             .background(Color.white.ignoresSafeArea(edges: [.top, .horizontal]))
         }
+    }
+}
+
+private struct CalendarBounceFix: ViewModifier {
+    func body(content: Content) -> some View {
+        // There is no `.never` for `ScrollBounceBehavior`.
+        // We disable bounce via `UIScrollView.appearance().bounces = false` in `onAppear`.
+        content
     }
 }
 
@@ -256,4 +266,6 @@ private struct WaveBottomShape: Shape {
             .navigationTitle(Topic.newYear.title)
             .navigationBarTitleDisplayMode(.inline)
     }
+    .preferredColorScheme(.light)
+    .environment(\.colorScheme, .light)
 }

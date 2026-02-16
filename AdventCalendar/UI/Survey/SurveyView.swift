@@ -204,6 +204,7 @@ struct SurveyView: View {
             .scrollBounceBehavior(.basedOnSize)
             .background(Color.white)
             .toolbar(.hidden, for: .navigationBar)
+            .toolbar(.hidden, for: .tabBar)
             .ignoresSafeArea(edges: .top)
             .background(ScrollViewConfigurator { scrollView in
                 // Absolutely lock the top edge: no rubber-banding / no negative contentOffset.
@@ -218,6 +219,9 @@ struct SurveyView: View {
             })
             .navigationBarBackButtonHidden(true)
             .interactiveDismissDisabled(!didTapSend)
+            .background(Color.white.ignoresSafeArea())
+            .preferredColorScheme(.light)
+            .environment(\.colorScheme, .light)
         }
     }
 }
@@ -362,4 +366,6 @@ private struct ScrollViewConfigurator: UIViewRepresentable {
     NavigationStack {
         SurveyView(topic: .newYear, day: 1, router: HomeRouter())
     }
+    .preferredColorScheme(.light)
+    .environment(\.colorScheme, .light)
 }

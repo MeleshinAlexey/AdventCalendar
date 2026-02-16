@@ -129,6 +129,7 @@ struct ArchiveView: View {
     private func archiveCard(_ entry: ArchiveEntry, m: Metrics) -> some View {
         ArchiveCardView(
             entry: entry,
+            width: m.cardWidth,
             height: m.cardHeight,
             cornerRadius: m.cardCornerRadius,
             innerPadding: m.cardInnerPadding,
@@ -166,34 +167,36 @@ struct ArchiveView: View {
 
         var betweenHeaderAndList: CGFloat { max(24, min(54, base * 0.085)) }
 
-        // Card shadow (adaptive)
-        var cardShadowRadius: CGFloat { max(5, min(9, base * 0.018)) }
-        var cardShadowY: CGFloat { max(2, min(5, base * 0.010)) }
+        // Card shadow (match StatisticsView)
+        var cardShadowRadius: CGFloat { 8 }
+        var cardShadowY: CGFloat { 4 }
 
-        /// Visible gap between cards.
-        /// Must be larger than the shadow footprint, otherwise cards look like they stick together.
-        var cardGap: CGFloat {
-            // Shadow footprint in points (approx.)
-            let shadowFootprint = (cardShadowRadius * 2) + abs(cardShadowY) + 16
-            // Adaptive desired gap by screen size
-            let adaptive = base * 0.13
-            // Clamp
-            return min(96, max(40, max(shadowFootprint, adaptive)))
-        }
+        /// Visible gap between cards (match Statistics)
+        var cardGap: CGFloat { 14 }
 
         var bottomPadding: CGFloat { max(24, min(50, base * 0.08)) }
 
         /// Extra space so the last card never goes under the TabBar.
         var tabBarSafeBottom: CGFloat { max(0, height * 0.12) }
 
-        var cardHeight: CGFloat {
-            // Keep cards proportional to width; clamp with height so small devices don’t look “stacked”.
-            let byWidth = width * 0.36
-            let byHeight = height * 0.22
-            return max(108, min(152, min(byWidth, byHeight)))
+        // MARK: - Adaptive card sizing (shared with Statistics)
+        /// Target card width that stays consistent across tabs.
+        /// Match Statistics: use full available width inside side paddings
+        var cardWidth: CGFloat {
+            width - (sidePadding * 2)
         }
-        var cardCornerRadius: CGFloat { max(18, min(24, width * 0.06)) }
-        var cardInnerPadding: CGFloat { max(18, min(22, width * 0.055)) }
+
+        /// Card height derived from width so proportions stay stable.
+        /// Slightly shorter than before to match the intended compact look.
+        var cardHeight: CGFloat {
+            max(112, min(140, cardWidth * 0.34))
+        }
+
+        var cardCornerRadius: CGFloat {
+            max(20, min(24, cardWidth * 0.06))
+        }
+
+        var cardInnerPadding: CGFloat { 16 }
 
         var topicTitleFont: CGFloat { max(22, min(28, width * 0.07)) }
         var monthFont: CGFloat { max(18, min(22, width * 0.055)) }
@@ -211,58 +214,60 @@ struct ArchiveView: View {
             let visibleArchive = archiveEntries
                 .sorted { $0.startDate < $1.startDate }
 
-            ScrollView {
-                VStack(alignment: .leading, spacing: 0) {
+            ZStack {
+                // Non-scrolling screen background (prevents visual jumps between tabs)
+                Color.white.ignoresSafeArea()
 
-                    // Header
-                    VStack(alignment: .leading, spacing: 10) {
-                        Text("Archive")
-                            .font(.system(size: m.titleFont, weight: .bold, design: .default))
-                            .foregroundStyle(Color.black.opacity(0.82))
+                ScrollView(showsIndicators: false) {
+                    VStack(alignment: .leading, spacing: 0) {
 
-                        Text("List of completed calendars")
-                            .font(.system(size: m.subtitleFont, weight: .bold, design: .default))
-                            .foregroundStyle(Color.archiveAccent)
-                    }
-                    .padding(.top, m.topPadding)
-                    .padding(.horizontal, m.sidePadding)
-
-                    Spacer(minLength: m.betweenHeaderAndList)
-
-                    // List (cards appear only after their calendar ended)
-                    if visibleArchive.isEmpty {
+                        // Header
                         VStack(alignment: .leading, spacing: 10) {
-                            Text("No completed calendars yet")
-                                .font(.system(size: max(18, min(22, m.titleFont * 0.8)), weight: .bold))
-                                .foregroundStyle(Color.black.opacity(0.70))
+                            Text("Archive")
+                                .font(.system(size: m.titleFont, weight: .bold, design: .default))
+                                .foregroundStyle(Color.black.opacity(0.82))
 
-                            Text("Finish a calendar to see it here.")
-                                .font(.system(size: max(14, min(18, m.subtitleFont * 0.55)), weight: .semibold))
-                                .foregroundStyle(Color.black.opacity(0.55))
+                            Text("List of completed calendars")
+                                .font(.system(size: m.subtitleFont, weight: .bold, design: .default))
+                                .foregroundStyle(Color.archiveAccent)
                         }
+                        // Match Statistics: safe-area top + adaptive spacing
+                        .padding(.top, geo.safeAreaInsets.top + max(8, m.topPadding * 0.45))
                         .padding(.horizontal, m.sidePadding)
-                    } else {
-                        VStack(alignment: .center, spacing: m.cardGap) {
-                            ForEach(visibleArchive) { entry in
-                                archiveCard(entry, m: m)
-                                    .contentShape(Rectangle())
-                                    .onTapGesture {
-                                        router.push(.calendar(topic: entry.topic))
-                                    }
+
+                        Spacer(minLength: m.betweenHeaderAndList)
+
+                        // List (cards appear only after their calendar ended)
+                        if visibleArchive.isEmpty {
+                            VStack(alignment: .leading, spacing: 10) {
+                                Text("No completed calendars yet")
+                                    .font(.system(size: max(18, min(22, m.titleFont * 0.8)), weight: .bold))
+                                    .foregroundStyle(Color.black.opacity(0.70))
+
+                                Text("Finish a calendar to see it here.")
+                                    .font(.system(size: max(14, min(18, m.subtitleFont * 0.55)), weight: .semibold))
+                                    .foregroundStyle(Color.black.opacity(0.55))
                             }
+                            .padding(.horizontal, m.sidePadding)
+                        } else {
+                            VStack(alignment: .center, spacing: m.cardGap) {
+                                ForEach(visibleArchive) { entry in
+                                    archiveCard(entry, m: m)
+                                        .contentShape(Rectangle())
+                                        .onTapGesture {
+                                            router.push(.calendar(topic: entry.topic))
+                                        }
+                                }
+                            }
+                            .padding(.horizontal, m.sidePadding)
                         }
-                        .padding(.horizontal, m.sidePadding)
-                    }
 
-                    Spacer(minLength: m.bottomPadding)
+                        // Match Statistics: bake bottom safe area into content spacing
+                        Spacer(minLength: max(m.bottomPadding, geo.safeAreaInsets.bottom + 12))
+                    }
+                    .frame(maxWidth: .infinity, alignment: .leading)
                 }
-                .frame(maxWidth: .infinity, alignment: .leading)
-            }
-            .background(Color.white)
-            .scrollBounceBehavior(.basedOnSize)
-            .safeAreaInset(edge: .bottom) {
-                // Add space for TabBar + device safe area.
-                Color.clear.frame(height: max(geo.safeAreaInsets.bottom, m.tabBarSafeBottom))
+                .scrollBounceBehavior(.basedOnSize)
             }
         }
     }
@@ -273,6 +278,7 @@ struct ArchiveView: View {
 private struct ArchiveCardView: View {
 
     fileprivate let entry: ArchiveEntry
+    let width: CGFloat
 
     let height: CGFloat
     let cornerRadius: CGFloat
@@ -302,13 +308,13 @@ private struct ArchiveCardView: View {
                     )
                 )
 
-            HStack(alignment: .center, spacing: 12) {
+            HStack(alignment: .center, spacing: 10) {
 
                 // Left text block
-                VStack(alignment: .leading, spacing: 8) {
+                VStack(alignment: .leading, spacing: 6) {
 
                     // Title + status (same row) — keep the title fully visible (no ellipsis)
-                    HStack(alignment: .center, spacing: 10) {
+                    HStack(alignment: .center, spacing: 8) {
                         Text(entry.topic.title)
                             .font(.system(size: topicTitleFont, weight: .bold, design: .default))
                             .foregroundStyle(Color.white)
@@ -355,8 +361,10 @@ private struct ArchiveCardView: View {
             }
             .padding(innerPadding)
         }
-        .frame(maxWidth: .infinity)
+        .frame(width: width)
         .frame(height: height)
+        .frame(maxWidth: .infinity)
+        .shadow(radius: shadowRadius, y: shadowY)
     }
 }
 
@@ -377,4 +385,6 @@ private extension Color {
 
 #Preview {
     ArchiveView(router: HomeRouter())
+        .preferredColorScheme(.light)
+        .environment(\.colorScheme, .light)
 }

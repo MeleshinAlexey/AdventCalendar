@@ -27,6 +27,7 @@ struct MainView: View {
                 Text("You haven't chosen a theme for your\nAdvent calendar yet!")
                     .font(.title3)
                     .fontWeight(.semibold)
+                    .foregroundStyle(.black)
                     .multilineTextAlignment(.center)
                     .padding(.horizontal, 24)
                     .padding(.top, 6)
@@ -57,7 +58,12 @@ struct MainView: View {
         }
         .navigationTitle("Main")
         .navigationBarTitleDisplayMode(.large)
-        .background(Color(.systemBackground))
+        // Force light appearance for both content and navigation bar
+        .preferredColorScheme(.light)
+        .toolbarColorScheme(.light, for: .navigationBar)
+        .toolbarBackground(Color.white, for: .navigationBar)
+        .toolbarBackground(.visible, for: .navigationBar)
+        .background(Color.white)
     }
 }
 

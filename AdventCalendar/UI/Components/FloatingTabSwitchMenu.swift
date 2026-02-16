@@ -51,13 +51,15 @@ struct FloatingTabSwitchMenu: View {
         } label: {
             Image(systemName: "ellipsis.circle.fill")
                 .font(.system(size: 28, weight: .semibold))
-                .foregroundStyle(.primary)
+                .foregroundStyle(.black)
                 .padding(14)
-                .background(.ultraThinMaterial, in: Circle())
+                .background(Color.white, in: Circle())
                 .shadow(radius: 6, x: 0, y: 3)
         }
         .padding(.trailing, 16)
         .padding(.bottom, 20)
         .accessibilityLabel("Quick tab switcher")
+        .preferredColorScheme(.light)
+        .environment(\.colorScheme, .light)
     }
 }

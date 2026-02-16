@@ -16,14 +16,27 @@ import SwiftUI
 import Combine
 
 // MARK: - Mock switch (use in Debug/Previews)
+// Tip: for the fastest workflow, set `AppMocking.enabledOverride` to true/false.
+// Leave it as `nil` to control via the Debug UI toggle.
 
 enum AppMocking {
-    /// Master switch. In DEBUG you can flip this to false in one action.
-    
-    // Toggle mocks here (true = ON, false = OFF)
     #if DEBUG
-//    static var enabled: Bool = true
-    static var enabled: Bool = false
+    /// Quick manual override (edit this one line when you want).
+    /// Set to `true` to force mocks ON, `false` to force mocks OFF, or `nil` to use the UI toggle.
+    static var enabledOverride: Bool? = nil
+
+    /// Master switch for mocks.
+    /// Priority:
+    /// 1) `enabledOverride` (fast local toggle)
+    /// 2) persisted UI toggle `debug_use_mocks`
+    static var enabled: Bool {
+        if let v = enabledOverride { return v }
+        return UserDefaults.standard.bool(forKey: "debug_use_mocks")
+    }
+    #endif
+
+    #if !DEBUG
+    static let enabled: Bool = false
     #endif
 
     #if DEBUG
@@ -37,7 +50,7 @@ enum AppMocking {
     static var scenario: AppMockScenario = .allUnlockedPartial(
         topic: .newYear,
         daysPassed: 35,
-        completedCount: 20,
+        completedCount: 2,
         surveyDays: 20
     )
     #endif
@@ -347,7 +360,15 @@ enum MockAppStorageSeed {
 //    return RootView()
 //}
 
-#Preview("Empty state") {
+//#Preview("Mocks ON (override)") {
+//    AppMocking.enabledOverride = true
+//    AppMockBootstrap.run()
+//    return RootView()
+//}
+
+#Preview("Mocks OFF (override)") {
+    AppMocking.enabledOverride = false
+    AppMockBootstrap.run()
     MockAppStorageSeed.clearActiveCalendar()
     return RootView()
 }

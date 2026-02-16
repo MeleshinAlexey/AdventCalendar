@@ -185,7 +185,7 @@ struct DayCardView: View {
 
                             Text("Task:")
                                 .font(.system(size: max(18, innerBox * 0.10), weight: .bold))
-                                .foregroundStyle(.primary)
+                                .foregroundStyle(.black)
 
                             Text(taskText)
                                 .font(.system(size: max(16, innerBox * 0.095), weight: .bold))
@@ -198,7 +198,7 @@ struct DayCardView: View {
                             if showNoMoreTasksMessage {
                                 Text("No more open tasks. Come back tomorrow.")
                                     .font(.system(size: max(14, innerBox * 0.07), weight: .semibold))
-                                    .foregroundStyle(.secondary)
+                                    .foregroundStyle(.gray)
                                     .multilineTextAlignment(.center)
                                     .padding(.top, 6)
                             }
@@ -215,14 +215,17 @@ struct DayCardView: View {
                 let availableButtonsW = geo.size.width - sidePadding * 2 - buttonSpacing
                 let buttonW = max(0, availableButtonsW / 2)
 
+                // If there is no next available day, Skip should be disabled (instead of showing a message)
+                let nextSkipDay = nextUnlockedUncompletedDay(after: shownDay)
+                let isSkipDisabled = (shownDay >= 30) || (nextSkipDay == nil)
+
                 HStack(spacing: buttonSpacing) {
                     Button {
                         // Advance to the next unlocked, not-yet-completed task day.
-                        if let next = nextUnlockedUncompletedDay(after: shownDay) {
+                        guard !isSkipDisabled else { return }
+                        if let next = nextSkipDay {
                             shownDay = next
                             showNoMoreTasksMessage = false
-                        } else {
-                            showNoMoreTasksMessage = true
                         }
                     } label: {
                         ZStack {
@@ -231,16 +234,19 @@ struct DayCardView: View {
                                 .scaledToFill()
                                 .frame(width: buttonW, height: buttonHeight)
                                 .clipped()
+                                .opacity(isSkipDisabled ? 0.55 : 1.0)
 
                             Text("Skip")
                                 .font(.system(size: 22, weight: .bold))
                                 .foregroundStyle(.white)
+                                .opacity(isSkipDisabled ? 0.85 : 1.0)
                         }
                         .frame(width: buttonW, height: buttonHeight)
                         .clipShape(RoundedRectangle(cornerRadius: 22, style: .continuous))
                         .shadow(color: Color.black.opacity(0.18), radius: 10, x: 0, y: 6)
                     }
                     .buttonStyle(.plain)
+                    .disabled(isSkipDisabled)
 
                     Button {
                         // Anti-farm: a day can be completed only once.
@@ -287,6 +293,9 @@ struct DayCardView: View {
             .background(Color.white.ignoresSafeArea())
         }
         .toolbar(.hidden, for: .navigationBar)
+        .toolbar(.hidden, for: .tabBar)
+        .preferredColorScheme(.light)
+        .environment(\.colorScheme, .light)
         .onAppear {
             if let first = firstUnlockedUncompletedDay(from: day) {
                 shownDay = first
@@ -304,6 +313,8 @@ struct DayCardView: View {
     NavigationStack {
         DayCardView(topic: .newYear, day: 1, router: HomeRouter())
     }
+    .preferredColorScheme(.light)
+    .environment(\.colorScheme, .light)
 }
 
 /// Wave shape for the bottom edge of the header image

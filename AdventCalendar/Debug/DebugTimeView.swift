@@ -10,26 +10,23 @@ import SwiftUI
 
 struct DebugTimeView: View {
 
-    // Global start date of the current topic cycle.
-    // Calendar unlocking is based on: days since this date.
-    @AppStorage("topic_start_date") private var topicStartDateISO: String = ""
+    // Stored as timeIntervalSince1970 (Double) to match RootView / ChoosingTopicView
+    @AppStorage("topic_start_date") private var topicStartDateRaw: Double = 0
+
+    // Master switch for mocks
+    @AppStorage("debug_use_mocks") private var debugUseMocks: Bool = false
 
     @State private var selectedDate: Date = Date()
 
     private let maxDay: Int = 30
 
-    private static let iso: ISO8601DateFormatter = {
-        let f = ISO8601DateFormatter()
-        f.formatOptions = [.withFullDate]
-        return f
-    }()
-
     private func parseStartDate() -> Date {
-        AdventProgress.parseStartDate(from: topicStartDateISO) ?? Date()
+        guard topicStartDateRaw > 0 else { return Date() }
+        return Date(timeIntervalSince1970: topicStartDateRaw)
     }
 
     private func setStartDate(_ date: Date) {
-        topicStartDateISO = Self.iso.string(from: date)
+        topicStartDateRaw = date.timeIntervalSince1970
         selectedDate = date
     }
 
@@ -62,7 +59,7 @@ struct DebugTimeView: View {
     }
 
     private func clearStartDate() {
-        topicStartDateISO = ""
+        topicStartDateRaw = 0
         selectedDate = Date()
     }
 
@@ -73,6 +70,9 @@ struct DebugTimeView: View {
     var body: some View {
         NavigationStack {
             Form {
+                Section("Mocks") {
+                    Toggle("Use mocks (debug_use_mocks)", isOn: $debugUseMocks)
+                }
                 Section("Start date (topic_start_date)") {
                     DatePicker(
                         "Start date",
@@ -124,12 +124,24 @@ struct DebugTimeView: View {
 
                 Section("Current raw values") {
                     HStack {
+                        Text("debug_use_mocks")
+                        Spacer()
+                        Text(debugUseMocks ? "true" : "false")
+                            .foregroundStyle(.secondary)
+                    }
+
+                    HStack {
                         Text("topic_start_date")
                         Spacer()
-                        Text(topicStartDateISO.isEmpty ? "(empty)" : topicStartDateISO)
-                            .foregroundStyle(.secondary)
-                            .lineLimit(1)
-                            .minimumScaleFactor(0.7)
+                        if topicStartDateRaw <= 0 {
+                            Text("(empty)")
+                                .foregroundStyle(.secondary)
+                        } else {
+                            Text("\(Int(topicStartDateRaw))")
+                                .foregroundStyle(.secondary)
+                                .lineLimit(1)
+                                .minimumScaleFactor(0.7)
+                        }
                     }
                 }
             }
@@ -146,4 +158,6 @@ struct DebugTimeView: View {
 
 #Preview {
     DebugTimeView()
+        .preferredColorScheme(.light)
+        .environment(\.colorScheme, .light)
 }
